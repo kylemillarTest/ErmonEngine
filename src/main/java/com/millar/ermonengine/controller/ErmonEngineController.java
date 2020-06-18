@@ -6,10 +6,13 @@ import com.millar.ermonengine.controller.model.hand.NextRoundRequest;
 import com.millar.ermonengine.controller.model.hand.NextRoundResponse;
 import com.millar.ermonengine.controller.model.player.*;
 import com.millar.ermonengine.controller.model.table.*;
+import com.millar.ermonengine.dao.model.Game;
 import com.millar.ermonengine.dao.model.Table;
 import com.millar.ermonengine.dao.model.TableId;
+import com.millar.ermonengine.dao.repository.GameRepository;
 import com.millar.ermonengine.dao.repository.TableRepository;
-import com.millar.ermonengine.table.create.CreateTableService;
+import com.millar.ermonengine.game.update.sit.SeatManager;
+import com.millar.ermonengine.table.create.CreateTable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,35 +20,35 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
-//TODO: rename to new microservicey name
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/v1/ermonengine")
 public class ErmonEngineController {
 
-    private final CreateTableService createTableService;
+    private final CreateTable createTable;
+    private final SeatManager seatManager;
+    private final GameRepository gameRepository;
     private final TableRepository tableRepository;
 
     //1. create table
     //2. create game
-    @PostMapping("/v1/table/")
+    //***Game should always exist. Create table creates game, and timer creates new game on existing table
+    @PostMapping("/table/")
     @ResponseStatus(HttpStatus.CREATED)
     public CreateTableResponse createTable(@RequestBody @Valid CreateTableRequest request) {
-        return createTableService.createTable(request);
+        return createTable.createTable(request);
     }
 
-    //TODO: remove when done with tests
+    //TODO: formalize this
     @GetMapping("/{name}/{owner}")
     public Table getTable(@PathVariable("name") String name, @PathVariable("owner") String owner) {
         return tableRepository.findById(new TableId(name, owner)).get();
     }
 
-    //---Join
-    //1. add new player
-    //***Game should always exist. Create table creates game, and timer creates new game on existing table
-    @PutMapping("/v1/join/")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<JoinResponse> join(@RequestBody @Valid JoinRequest request) {
-        return ResponseEntity.ok().build();
+    //TODO: formalize this
+    @GetMapping("/{name}/{owner}/{gameId}")
+    public Game getGame(@PathVariable("name") String name, @PathVariable("owner") String owner, @PathVariable String gameId) {
+        return gameRepository.findById(new TableId(new TableId(name, owner), gameId)).get();
     }
 
     //---Sit-in
@@ -53,31 +56,31 @@ public class ErmonEngineController {
     //2. add buy-in (if wanted/necessary)
     //---Sit-out
     //1. remove player
-    @PutMapping("/v1/sit/")
+    @PutMapping("/sit/")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<SitResponse> sit(@RequestBody @Valid SitRequest request) {
-        return ResponseEntity.ok().build();
+    public SitResponse sit(@RequestBody @Valid SitRequest request) {
+        return seatManager.sit(request);
     }
 
-    @PostMapping("/v1/{handId}/round/")
+    @PostMapping("/{handId}/round/")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<NextRoundRequest> nextRound(@RequestBody NextRoundResponse nextRoundResponse) {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/v1/{playerId}/fold/")
+    @PutMapping("/{playerId}/fold/")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<FoldResponse> fold(@RequestBody FoldRequest request) {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/v1/{playerId}/check/")
+    @PutMapping("/{playerId}/check/")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<CheckResponse> check(@RequestBody CheckRequest request) {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/v1/{playerId}/bet/")
+    @PutMapping("/{playerId}/bet/")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<BetResponse> bet(@RequestBody BetResponse response) {
         return ResponseEntity.ok().build();

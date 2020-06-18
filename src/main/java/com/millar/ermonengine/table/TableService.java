@@ -14,24 +14,18 @@ public class TableService {
 
     private final TableRepository tableRepository;
 
-//    public Table createTable(String name, String owner, boolean isPublic, List<String> adminList, String ruleSet) {
-//        Table table = new Table(
-//            new TableId(name, owner),
-//            isPublic,
-//            adminList,
-//            ruleSet,
-//            Instant.now(),
-//            TableStatus.OPEN.toString()
-//        );
-//        return tableRepository.save(table);
-//    }
+    public Table getTable(TableId tableId) {
+        //TODO: fix error handling
+        return tableRepository.findById(tableId)
+                .orElseThrow(RuntimeException::new);
+    }
 
     public Table createTable(String name, String owner, String ruleSet) {
         Table table = new Table(
                 new TableId(name, owner),
                 ruleSet,
                 Instant.now(),
-                TableStatus.OPEN.toString()
+                TableStatus.OPEN
         );
         return tableRepository.save(table);
     }

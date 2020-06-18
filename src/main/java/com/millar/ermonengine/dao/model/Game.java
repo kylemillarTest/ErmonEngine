@@ -1,44 +1,33 @@
 package com.millar.ermonengine.dao.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.millar.ermonengine.dao.converters.InstantConverter;
-import com.millar.ermonengine.table.TableStatus;
+import com.millar.ermonengine.game.GameStatus;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 
 import java.time.Instant;
+import java.util.List;
 
-//TODO: rename this table to be more inclusive
 @DynamoDBTable(tableName = "Table")
 @Setter
 @NoArgsConstructor
-public class Table {
+public class Game {
     private static final String DELIMITER = "#";
 
     @Id
     private TableId tableId;
-    //List<String> adminList;
-    //filler
-    private String ruleSet;
+    private List<Player> playerList;
+    private GameStatus status;
     private Instant createdAt;
     private Instant lastPlayedAt;
-    private TableStatus status;
 
-    public Table(TableId tableId, String ruleSet, Instant createdAt, TableStatus status) {
-        this.tableId = tableId;
-        this.ruleSet = ruleSet;
-        this.createdAt = createdAt;
-        this.status = status;
-    }
-
-    //spring data will not like it if we have the get for the key
-    @DynamoDBIgnore
-    //TODO: wont need this when get requests are formalized
-    @JsonIgnore
-    public TableId getTableId() {
-        return tableId;
+    public Game(TableId tableId, GameStatus status) {
+         this.tableId = tableId;
+         this.status = status;
+         this.createdAt = Instant.now();
     }
 
     //--Used to define key of multiple fields for spring data-----------
@@ -68,19 +57,15 @@ public class Table {
 
     //-----------------------------------
 
-//    @DynamoDBAttribute
-//    public List<String> getAdminList() {
-//        return adminList;
-//    }
-
+    @DynamoDBTyped(DynamoDBMapperFieldModel.DynamoDBAttributeType.L)
     @DynamoDBAttribute
-    public String getRuleSet() {
-        return ruleSet;
+    public List<Player> getPlayerList() {
+        return playerList;
     }
 
     @DynamoDBTypeConvertedEnum
     @DynamoDBAttribute
-    public TableStatus getStatus() {
+    public GameStatus getStatus() {
         return status;
     }
 
@@ -96,14 +81,7 @@ public class Table {
         return lastPlayedAt;
     }
 
-    //used to get the values we want from the composite hash key
+    //get the value we want from the sort key
     @DynamoDBIgnore
-    public String getName() {
-        return getPK() != null ? getPK().split(DELIMITER)[2] : null;
-    }
-
-    @DynamoDBIgnore
-    public String getOwner() {
-        return getPK() != null ? getPK().split(DELIMITER)[3] : null;
-    }
+    public String getGameId() {return getSK() != null ? getSK().split(DELIMITER)[2] : null; }
 }
